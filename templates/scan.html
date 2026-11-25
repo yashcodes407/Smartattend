@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block content %}<div class="heading"><div><p class="eyebrow">LIVE ATTENDANCE</p><h1>Scan Student QR</h1><p class="muted">Allow camera access and hold a student QR code in front of the camera.</p></div></div>
+<section class="card scanbox"><div id="reader"></div><div id="result" class="scanresult">Camera start hone ka wait karein…</div><p class="hint">Tip: QR code screen brightness high rakhein aur camera se 10–20 cm door rakhein.</p></section>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const resultBox=document.getElementById('result'); let busy=false;
+function onScanSuccess(decodedText){
+ if(busy) return; busy=true;
+ fetch('/api/mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:decodedText})})
+ .then(r=>r.json()).then(data=>{resultBox.textContent=data.message;resultBox.className='scanresult '+(data.ok?'success':'error');})
+ .catch(()=>{resultBox.textContent='Network/server error. Dobara try karein.';resultBox.className='scanresult error';})
+ .finally(()=>setTimeout(()=>{busy=false;},1800));
+}
+if(window.Html5Qrcode){
+ const scanner=new Html5Qrcode("reader");
+ scanner.start({ facingMode:"environment" },{fps:10,qrbox:{width:230,height:230}},onScanSuccess)
+ .then(()=>{resultBox.textContent='Camera ready. QR code scan karein.';})
+ .catch(err=>{resultBox.textContent='Camera start nahi hua: '+err+'. Browser camera permission allow karein.';resultBox.className='scanresult error';});
+}else{resultBox.textContent='QR scanner library load nahi hui. Internet connection check karein.';resultBox.className='scanresult error';}
+</script>{% endblock %}
